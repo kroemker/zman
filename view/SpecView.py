@@ -13,17 +13,13 @@ class SpecView(BaseView):
         self.spec_filter = ""
 
     def render_internal(self):
-        imgui.begin("Spec", True)
-        imgui.text("Filter")
-        imgui.same_line()
-        _, self.spec_filter = imgui.input_text("", self.spec_filter, 256)
+        _, self.spec_filter = imgui.input_text("Filter", self.spec_filter, 256)
         self.__render_segment(self.segments)
         imgui.separator()
         if self.selected_segment:
             imgui.begin_child("Selected Segment", 0, 0, True)
             imgui.text(self.selected_segment["code"])
             imgui.end_child()
-        imgui.end()
 
     def __render_segment(self, segment):
         for key in sorted(segment.keys(), key=lambda x: "name" in segment[x]):

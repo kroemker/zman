@@ -43,7 +43,7 @@ class MainWindow:
 
         imgui.new_frame()
 
-        self.menu()
+        self.render_menu()
 
         self.render_views()
 
@@ -56,7 +56,7 @@ class MainWindow:
 
         pygame.display.flip()
 
-    def menu(self):
+    def render_menu(self):
         if imgui.begin_main_menu_bar():
             if imgui.begin_menu("File", True):
                 clicked_quit, selected_quit = imgui.menu_item("Quit", "Cmd+Q", False, True)
