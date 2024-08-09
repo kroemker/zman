@@ -1,6 +1,0 @@
-﻿beginseg
-    name "ovl_${name}"
-    compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_${name}/z_$L{name}.o"
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_${name}/ovl_${name}_reloc.o"
-endseg

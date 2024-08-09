@@ -45,7 +45,7 @@ class SpecView(BaseView):
                 return True
 
     def update(self):
-        with open(self.config.oot_decomp_path + "/spec", "r") as f:
+        with open(self.config.spec_path, "r") as f:
             spec_content = f.read()
         segments = spec_content.split("beginseg")
         for segment in segments:

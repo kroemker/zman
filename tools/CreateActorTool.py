@@ -147,7 +147,7 @@ class CreateActorTool(BaseWindow):
     def parse_object_table(self):  # TODO probably move this to a separate class
         object_names = []
         object_variables = []
-        with open(self.config.oot_decomp_path + "/include/tables/object_table.h", "r", encoding="utf-8") as f:
+        with open(self.config.object_table_path, "r", encoding="utf-8") as f:
             content = f.read()
         for line in content.split("\n"):
             match = re.search(r"\/\* \w* \*\/ DEFINE_OBJECT\((\w*),\s*(\w*)\)", line)
@@ -159,9 +159,7 @@ class CreateActorTool(BaseWindow):
     def update_possible_animations(self):
         self.possible_animations = []
         object_name = self.object_names[self.object_variable]
-        with open(self.config.oot_decomp_path + f"/extracted/gc-eu-mq-dbg/assets/objects/{object_name}/{object_name}.h",
-                  "r",
-                  encoding="utf-8") as f:
+        with open(self.config.objects_base_path + f"/{object_name}/{object_name}.h", "r", encoding="utf-8") as f:
             content = f.read()
         for match in re.finditer(r"extern AnimationHeader (\w*);", content):
             self.possible_animations.append(match.group(1))
@@ -170,9 +168,7 @@ class CreateActorTool(BaseWindow):
         self.possible_skeletons = []
         self.flex_skeletons = []
         object_name = self.object_names[self.object_variable]
-        with open(self.config.oot_decomp_path + f"/extracted/gc-eu-mq-dbg/assets/objects/{object_name}/{object_name}.h",
-                  "r",
-                  encoding="utf-8") as f:
+        with open(self.config.objects_base_path + f"/{object_name}/{object_name}.h", "r", encoding="utf-8") as f:
             content = f.read()
         for match in re.finditer(r"extern (Flex)*SkeletonHeader (\w*);", content):
             self.possible_skeletons.append(match.group(2))
@@ -186,7 +182,7 @@ class CreateActorTool(BaseWindow):
         print("Create actor " + self.actor_name)
 
     def create_spec_entry(self):
-        with open(self.config.oot_decomp_path + "/spec", "r") as f:
+        with open(self.config.spec_path, "r") as f:
             spec_content = f.read()
         ovl_section_start = spec_content.find("beginseg\n    name \"ovl_title\"")
         if ovl_section_start == -1:
@@ -198,11 +194,11 @@ class CreateActorTool(BaseWindow):
                      f"    include \"$(BUILD_DIR)/src/overlays/actors/ovl_{self.actor_name}/ovl_{self.actor_name}_reloc.o\"\n" \
                      f"endseg\n\n"
         spec_content = spec_content[:ovl_section_start] + spec_entry + spec_content[ovl_section_start:]
-        with open(self.config.oot_decomp_path + "/spec", "w") as f:
+        with open(self.config.spec_path, "w") as f:
             f.write(spec_content)
 
     def create_actor_variable(self):
-        with open(self.config.oot_decomp_path + "/include/tables/actor_table.h", "r") as f:
+        with open(self.config.actor_table_path, "r") as f:
             actor_table_content = f.read()
         actor_table_entry = f"DEFINE_ACTOR({self.actor_name}, {self.get_actor_variable()}, " \
                             f"{self.allocation_types[self.allocation_type].constant}, \"{self.actor_name}\")"
@@ -214,7 +210,7 @@ class CreateActorTool(BaseWindow):
                                    + actor_table_content[unset_actor_end:])
         else:
             actor_table_content += actor_table_entry + "\n"
-        with open(self.config.oot_decomp_path + "/include/tables/actor_table.h", "w") as f:
+        with open(self.config.actor_table_path, "w") as f:
             f.write(actor_table_content)
 
     def create_actor_file(self):

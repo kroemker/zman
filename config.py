@@ -5,6 +5,15 @@ class Config:
     def __init__(self, oot_decomp_path):
         self.oot_decomp_path = oot_decomp_path
         self.mm_decomp_path = ""
+        self.spec_path = oot_decomp_path + "/spec"
+        self.makefile_path = oot_decomp_path + "/Makefile"
+        self.actor_table_path = oot_decomp_path + "/include/tables/actor_table.h"
+        self.scene_table_path = oot_decomp_path + "/include/tables/scene_table.h"
+        self.object_table_path = oot_decomp_path + "/include/tables/object_table.h"
+        self.objects_base_path = oot_decomp_path + f"/extracted/gc-eu-mq-dbg/assets/objects"
+        self.z_select_path = oot_decomp_path + "/src/overlays/gamestates/ovl_select/z_select.c"
+        self.z_player_path = oot_decomp_path + "/src/overlays/actors/ovl_player_actor/z_player.c"
+        self.z_parameter_path = oot_decomp_path + "/src/code/z_parameter.c"
         self.actor_categories = [
             CEnumValue("ACTORCAT_PLAYER", "Player", "Only player."),
             CEnumValue("ACTORCAT_EXPLOSIVE", "Explosives", "Bombchus, Bombs, etc."),
