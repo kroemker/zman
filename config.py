@@ -14,6 +14,8 @@ class Config:
         self.z_select_path = oot_decomp_path + "/src/overlays/gamestates/ovl_select/z_select.c"
         self.z_player_path = oot_decomp_path + "/src/overlays/actors/ovl_player_actor/z_player.c"
         self.z_parameter_path = oot_decomp_path + "/src/code/z_parameter.c"
+        self.z_play_path = oot_decomp_path + "/src/code/z_play.c"
+        self.z_scene_path = oot_decomp_path + "/src/code/z_scene.c"
         self.actor_categories = [
             CEnumValue("ACTORCAT_PLAYER", "Player", "Only player."),
             CEnumValue("ACTORCAT_EXPLOSIVE", "Explosives", "Bombchus, Bombs, etc."),

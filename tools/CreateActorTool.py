@@ -5,6 +5,7 @@ import imgui
 
 from BaseWindow import BaseWindow
 from util.CEnumValue import CEnumValue
+from util.ImguiUtil import add_tooltip
 
 
 # Possible features:
@@ -14,6 +15,7 @@ from util.CEnumValue import CEnumValue
 # - Damage Table
 # - Dynapoly setup
 # - NPC Message tree
+
 class CreateActorTool(BaseWindow):
     def __init__(self, config, on_destroy):
         super().__init__("Create Actor", config, on_destroy=on_destroy)
@@ -46,18 +48,18 @@ class CreateActorTool(BaseWindow):
 
     def render_internal(self):
         _, self.actor_name = imgui.input_text("Actor Name", self.actor_name, 256)
-        self.add_tooltip("The name of the actor to create without any prefix, e.g. 'Obj_Bombiwa' or 'En_Test'.")
+        add_tooltip("The name of the actor to create without any prefix, e.g. 'Obj_Bombiwa' or 'En_Test'.")
         _, self.description = imgui.input_text("Description", self.description, 256)
-        self.add_tooltip("A short description of the actor.")
+        add_tooltip("A short description of the actor.")
 
         imgui.separator()
         imgui.text("Overlay Settings")
         _, self.allocation_type = imgui.combo("Allocation Type", self.allocation_type,
                                               [allocation_type.name for allocation_type in self.allocation_types])
-        self.add_tooltip(self.build_tooltip_from_cenum_list("Overlay allocation type", self.allocation_types))
+        add_tooltip(self.build_tooltip_from_cenum_list("Overlay allocation type", self.allocation_types))
         _, self.prefer_overriding_unset_actors = imgui.checkbox("Prefer Overriding Unset Actors",
                                                                 self.prefer_overriding_unset_actors)
-        self.add_tooltip(
+        add_tooltip(
             "If enabled, an entry in the actor table will be overridden if it is unset.\nThis leads to new actors being "
             "fragmented in the actor table,\nbut keeps the actor table the same size as long as there are enough "
             "unset slots.")
@@ -66,28 +68,28 @@ class CreateActorTool(BaseWindow):
         imgui.text("Profile")
         _, self.category = imgui.combo("Category", self.category,
                                        [category.name for category in self.config.actor_categories])
-        self.add_tooltip(self.build_tooltip_from_cenum_list("Actor category", self.config.actor_categories))
+        add_tooltip(self.build_tooltip_from_cenum_list("Actor category", self.config.actor_categories))
         changed_object, self.object_variable = imgui.combo("Object", self.object_variable, self.object_variables)
         if changed_object:
             self.update_possible_animations()
             self.update_possible_skeletons()
-        self.add_tooltip(
+        add_tooltip(
             "The object contains the actor's additional resources such as model, textures etc..\nIt is loaded when "
             "the actor is spawned unless it is already loaded.\nThis is always the case for OBJECT_GAMEPLAY_KEEP.\n"
             "OBJECT_GAMEPLAY_FIELD_KEEP and OBJECT_DANGEON_KEEP are automatically\nloaded if a overworld or dungeon "
             "scene is active respectively.")
         self.render_actor_flag_checkboxes()
         _, self.actor_draw_enabled = imgui.checkbox("Draw Enabled", self.actor_draw_enabled)
-        self.add_tooltip("If disabled, the actor will not have a draw function (i.e. will not be drawn).")
+        add_tooltip("If disabled, the actor will not have a draw function (i.e. will not be drawn).")
         _, self.has_skeleton = imgui.checkbox("Has Skeleton", self.has_skeleton)
-        self.add_tooltip("If enabled, the actor will have a skeleton and can be animated.")
+        add_tooltip("If enabled, the actor will have a skeleton and can be animated.")
         if self.has_skeleton:
             _, self.skeleton = imgui.combo("Skeleton", self.skeleton, self.possible_skeletons)
             _, self.initial_animation = imgui.combo("Initial Animation", self.initial_animation,
                                                     self.possible_animations)
-            self.add_tooltip("The initial animation to play when the actor is spawned.")
+            add_tooltip("The initial animation to play when the actor is spawned.")
             _, self.limb_count = imgui.input_int("Limb Count", self.limb_count)
-            self.add_tooltip("The number of limbs in the actor's skeleton.")
+            add_tooltip("The number of limbs in the actor's skeleton.")
 
         imgui.separator()
         imgui.text("Action Functions")
@@ -104,7 +106,7 @@ class CreateActorTool(BaseWindow):
                     self.actor_flags[actor_flag.constant] = False
                 _, self.actor_flags[actor_flag.constant] = imgui.checkbox(actor_flag.name,
                                                                           self.actor_flags[actor_flag.constant])
-                self.add_tooltip(actor_flag.description)
+                add_tooltip(actor_flag.description)
             imgui.tree_pop()
 
     def render_action_function_list(self):
@@ -126,12 +128,6 @@ class CreateActorTool(BaseWindow):
 
         if imgui.button("+"):
             self.action_funcs.append({"name": "", "animation": 0, "animation_looped": False, "animation_speed": 1.0})
-
-    def add_tooltip(self, text):
-        if imgui.is_item_hovered(imgui.HOVERED_ANY_WINDOW):
-            imgui.begin_tooltip()
-            imgui.text(text)
-            imgui.end_tooltip()
 
     def build_tooltip_from_cenum_list(self, description, cenum_list):
         tooltip = description
