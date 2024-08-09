@@ -11,7 +11,9 @@ import pygame
 from imgui.integrations.pygame import PygameRenderer
 
 from config import Config
+from tools.CreateActorTool import CreateActorTool
 from view.ActorView import ActorView
+from view.ConfigView import ConfigView
 from view.InventoryView import InventoryView
 from view.SpecView import SpecView
 
@@ -29,10 +31,17 @@ class MainWindow:
         self.show_custom_window = True
         self.config = Config("\\\\wsl.localhost\\Ubuntu\\home\\leo\\oot")
         self.views = [
+            ConfigView(self.config),
             SpecView(self.config),
             ActorView(self.config),
             InventoryView(self.config),
         ]
+        self.tools = [{
+            "name": "Create Actor",
+            "create": lambda: CreateActorTool(self.config, lambda window: self.windows.remove(window))
+        }]
+        self.windows = []
+        self.windows.extend(self.views)
 
     def render(self):
         for event in pygame.event.get():
@@ -45,7 +54,7 @@ class MainWindow:
 
         self.render_menu()
 
-        self.render_views()
+        self.render_windows()
 
         imgui.show_test_window()
 
@@ -58,22 +67,22 @@ class MainWindow:
 
     def render_menu(self):
         if imgui.begin_main_menu_bar():
-            if imgui.begin_menu("File", True):
-                clicked_quit, selected_quit = imgui.menu_item("Quit", "Cmd+Q", False, True)
-                if clicked_quit:
-                    sys.exit(0)
-                imgui.end_menu()
-            if imgui.begin_menu("Views", True):
-                for view in self.views:
-                    clicked_view, selected_view = imgui.menu_item(view.name, "", False, True)
-                    if clicked_view:
-                        view.show()
-                imgui.end_menu()
+            self.render_menu_item_section("View", self.views, lambda view: view.name, lambda view: view.show())
+            self.render_menu_item_section("Tools", self.tools, lambda tool: tool["name"],
+                                          lambda tool: self.windows.append(tool["create"]()))
             imgui.end_main_menu_bar()
 
-    def render_views(self):
-        for view in self.views:
-            view.render()
+    def render_menu_item_section(self, name, items, on_name, on_click):
+        if imgui.begin_menu(name):
+            for item in items:
+                clicked_item, selected_item = imgui.menu_item(on_name(item), "", False, True)
+                if clicked_item:
+                    on_click(item)
+            imgui.end_menu()
+
+    def render_windows(self):
+        for window in self.windows:
+            window.render()
 
 
 def main():

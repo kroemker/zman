@@ -2,17 +2,20 @@
 
 import imgui
 
+from BaseWindow import BaseWindow
 
-class BaseView:
-    def __init__(self, name, config, visible=False):
-        self.name = name
-        self.config = config
+
+class BaseView(BaseWindow):
+    def __init__(self, name, config, visible=False, menu=True):
+        super().__init__(name, config)
         self.visible = visible
+        self.menu = menu
 
     def render(self):
         if self.visible:
-            _, self.visible = imgui.begin(self.name, True, imgui.WINDOW_MENU_BAR)
-            self.__render_menu()
+            _, self.visible = imgui.begin(self.name, True, imgui.WINDOW_MENU_BAR if self.menu else 0)
+            if self.menu:
+                self.__render_menu()
             self.render_internal()
             imgui.end()
 
@@ -24,10 +27,6 @@ class BaseView:
                     self.update()
                 imgui.end_menu()
             imgui.end_menu_bar()
-
-    @abstractmethod
-    def render_internal(self):
-        raise NotImplementedError
 
     @abstractmethod
     def update(self):

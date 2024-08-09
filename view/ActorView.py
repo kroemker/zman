@@ -11,23 +11,9 @@ class ActorView(BaseView):
         self.actors = []
         self.show_by_descriptive_name = True
         self.name_filter = ""
-        self.category_mapping = {
-            "ACTORCAT_SWITCH": "Switch",
-            "ACTORCAT_BG": "Background",
-            "ACTORCAT_PLAYER": "Player",
-            "ACTORCAT_EXPLOSIVE": "Explosives",
-            "ACTORCAT_NPC": "NPC",
-            "ACTORCAT_ENEMY": "Enemy",
-            "ACTORCAT_PROP": "Prop",
-            "ACTORCAT_ITEMACTION": "Item/Action",
-            "ACTORCAT_MISC": "Misc",
-            "ACTORCAT_BOSS": "Boss",
-            "ACTORCAT_DOOR": "Door",
-            "ACTORCAT_CHEST": "Chest"
-        }
-        self.category_values = list(self.category_mapping.values())
+        self.category_values = [category.name for category in self.config.actor_categories]
         self.category_values.append("All")
-        self.category_filter = len(self.category_mapping)
+        self.category_filter = len(self.config.actor_categories)
 
     def render_internal(self):
         self.__render_menu()
@@ -35,19 +21,21 @@ class ActorView(BaseView):
             list_name, tooltip_name = self.__get_actor_names(actor)
             if self.name_filter.lower() not in list_name.lower() and self.name_filter.lower() not in tooltip_name.lower():
                 continue
-            if (self.category_filter < len(self.category_mapping) and (
-                    actor["category"] not in self.category_mapping or
-                    self.category_values[self.category_filter] != self.category_mapping[actor["category"]])):
+            actor_category = self.config.get_cenum_by_constant(self.config.actor_categories, actor["category"])
+            if (self.category_filter < len(self.config.actor_categories) and (
+                    actor_category is None or
+                    self.category_values[self.category_filter] != actor_category.name)):
                 continue
             if imgui.tree_node(list_name, imgui.TREE_NODE_FRAMED):
-                imgui.text("Variable: " + actor["variable"])
-                imgui.text("Category: " + self.category_mapping[actor["category"]])
-                imgui.text("Flags: " + str(actor["flags"]))
-                imgui.text("Object: " + actor["object"])
                 if tooltip_name != "" and imgui.is_item_hovered(imgui.HOVERED_ANY_WINDOW):
                     imgui.begin_tooltip()
                     imgui.text(tooltip_name)
                     imgui.end_tooltip()
+                imgui.text("Variable: " + actor["variable"])
+                imgui.text("Category: " + actor_category.name if actor_category is not None else "?")
+                imgui.text("Flags: " + ", ".join(
+                    [self.config.get_cenum_by_constant(self.config.actor_flags, flag).name for flag in actor["flags"]]))
+                imgui.text("Object: " + actor["object"])
                 imgui.tree_pop()
 
     def __render_menu(self):
@@ -65,7 +53,7 @@ class ActorView(BaseView):
 
     def update(self):
         self.actors = []
-        for root, dirs, files in os.walk(self.config.decomp_path + "/src/overlays/actors"):
+        for root, dirs, files in os.walk(self.config.oot_decomp_path + "/src/overlays/actors"):
             for directory in dirs:
                 if directory == "ovl_player_actor":
                     c_file = root + "/" + directory + "/" + "z_player.c"
@@ -80,8 +68,8 @@ class ActorView(BaseView):
         actor = {}
         actor["name"] = directory
         actor["descriptive_name"] = self.__parse_descriptive_name(content)
-        actor["variable"], actor["category"], actor["flags"], actor["object"] = self.__parse_init_vars(directory,
-                                                                                                       content)
+        actor["variable"], actor["category"], actor["flags"], actor["object"] = self.parse_profile(directory,
+                                                                                                   content)
         return actor
 
     def __parse_descriptive_name(self, content):
@@ -94,23 +82,23 @@ class ActorView(BaseView):
                 return line[len("Description: "):].strip()
         return ""
 
-    def __parse_init_vars(self, name, content):
-        start = content.find("ActorInit ")
+    def parse_profile(self, name, content):
+        start = content.find("ActorProfile ")
         end = content.find("};", start)
         if start == -1 or end == -1:
-            print("No actor init vars found for actor " + name)
+            print("No actor profile found for actor " + name)
             return ["", "", "", ""]
         lines = content[start:end].split("\n")
-        init_vars = []
+        profile = []
         i = 1
-        while len(init_vars) < 4:
+        while len(profile) < 4:
             line = lines[i].replace("/**/", "").replace(",", "").strip()
             i += 1
             if line.startswith("//"):
                 continue
-            init_vars.append(line)
-        init_vars[2] = self.__parse_flags(content, init_vars[2])
-        return init_vars
+            profile.append(line)
+        profile[2] = self.__parse_flags(content, profile[2])
+        return profile
 
     def __parse_flags(self, content, flags):
         start = content.find("#define " + flags + " ") + len(flags) + len("#define  ")
