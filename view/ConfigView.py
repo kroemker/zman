@@ -4,12 +4,48 @@ import imgui
 
 from patch.AdultCrawlspaceEntryPatch import AdultCrawlspaceEntryPatch
 from patch.DrawDPadIconPatch import DrawDPadIconPatch
+from patch.RestoreN64LogoPatch import RestoreN64LogoPatch
+from patch.TranslateMapSelectEntriesPatch import TranslateMapSelectEntriesPatch
 from util.ImguiUtil import add_tooltip
 from util.StringUtil import replace_line, insert_block_before_line, remove_block_from_line_to_line
 from view.BaseView import BaseView
 
 
 class ConfigView(BaseView):
+    Z_OPENING_SETUP_ORIGINAL = """void TitleSetup_SetupTitleScreen(TitleSetupState* this) {
+    gSaveContext.gameMode = GAMEMODE_TITLE_SCREEN;
+    this->state.running = false;
+    gSaveContext.save.linkAge = LINK_AGE_ADULT;
+    Sram_InitDebugSave();
+    gSaveContext.save.cutsceneIndex = 0xFFF3;
+    gSaveContext.sceneLayer = 7;
+    SET_NEXT_GAMESTATE(&this->state, Play_Init, PlayState);
+}"""
+    Z_OPENING_SETUP_BOOT_MAP_SELECT = """void TitleSetup_SetupTitleScreen(TitleSetupState* this) {
+    gSaveContext.gameMode = GAMEMODE_NORMAL;
+    this->state.running = false;
+    SET_NEXT_GAMESTATE(&this->state, MapSelect_Init, MapSelectState);
+}"""
+    Z_OPENING_SETUP_BOOT_SCENE = """void TitleSetup_SetupTitleScreen(TitleSetupState* this) {
+    Sram_InitDebugSave();
+    gSaveContext.save.linkAge = __BOOT_AGE__;
+    gSaveContext.save.cutsceneIndex = 0;
+    gSaveContext.save.entranceIndex = __ENTRANCE_INDEX__;
+    gSaveContext.respawnFlag = 0;
+    gSaveContext.respawn[RESPAWN_MODE_DOWN].entranceIndex = __ENTRANCE_INDEX__;
+    gSaveContext.seqId = (u8)NA_BGM_DISABLED;
+    gSaveContext.natureAmbienceId = 0xFF;
+    gSaveContext.showTitleCard = false;
+    gWeatherMode = WEATHER_MODE_CLEAR;
+    gSaveContext.magicFillTarget = gSaveContext.save.info.playerData.magic;
+    gSaveContext.magicCapacity = 0;
+    gSaveContext.save.info.playerData.magicLevel = gSaveContext.save.info.playerData.magic = 0;
+
+    gSaveContext.gameMode = GAMEMODE_NORMAL;
+    this->state.running = false;
+    SET_NEXT_GAMESTATE(&this->state, Play_Init, PlayState);
+}"""
+
     def __init__(self, config):
         super().__init__("Configuration", config)
         self.saved = False
@@ -23,11 +59,19 @@ class ConfigView(BaseView):
         self.disable_matching_check = False
         self.override_debug = False
         self.debug_enabled = True
+        self.boot_mode = 0
+        self.boot_modes = ["Normal", "Map Select", "Scene"]
+        self.boot_scene = 0
+        self.boot_age = 0
+        self.boot_ages = ["Child", "Adult"]
         self.map_select_default_scene = 0
+        self.map_select_default_age = 0
         self.scenes = []
         self.patches = [
             AdultCrawlspaceEntryPatch(self.config),
             DrawDPadIconPatch(self.config),
+            RestoreN64LogoPatch(self.config),
+            TranslateMapSelectEntriesPatch(self.config)
         ]
         self.patch_info = [{"enabled": False, "applied": False} for _ in self.patches]
         self.play_state_heap_size = 0
@@ -37,7 +81,7 @@ class ConfigView(BaseView):
     def update(self):
         self.update_makefile_options()
         self.update_scenes()
-        self.update_file_select_options()
+        self.update_boot_options()
         self.update_patch_info()
         self.update_gameplay_options()
         self.saved = False
@@ -62,7 +106,7 @@ class ConfigView(BaseView):
                 self.copy_rom = True
                 self.rom_copy_dir = line.split(" ")[2]
 
-    def update_file_select_options(self):
+    def update_boot_options(self):
         with open(self.config.z_select_path, "r", encoding="utf-8") as f:
             content = f.read()
         init_start = content.find("void MapSelect_Init")
@@ -70,7 +114,28 @@ class ConfigView(BaseView):
             match = re.search(r"this->topDisplayedScene = (\d+);", line)
             if match:
                 self.map_select_default_scene = int(match.group(1))
-                break
+            match = re.search(r"gSaveContext.save.linkAge = (\w+);", line)
+            if match:
+                self.map_select_default_age = 0 if match.group(1) == "LINK_AGE_CHILD" else 1
+
+        self.boot_scene = 0
+        self.boot_age = 0
+        with open(self.config.z_opening_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        setup_start = content.find("void TitleSetup_SetupTitleScreen")
+        setup_end = content.find("}", setup_start)
+        if content[setup_start:setup_end].find("GAMEMODE_TITLE_SCREEN") != -1:
+            self.boot_mode = 0
+        elif content[setup_start:setup_end].find("MapSelect_Init") != -1:
+            self.boot_mode = 1
+        else:
+            self.boot_mode = 2
+            match = re.search(r"gSaveContext.save.linkAge = (\w+);", content[setup_start:setup_end])
+            if match:
+                self.boot_age = 0 if match.group(1) == "LINK_AGE_CHILD" else 1
+            match = re.search(r"gSaveContext.save.entranceIndex = (\w+);", content[setup_start:setup_end])
+            if match:
+                self.boot_scene = self.scenes.index(self.config.get_scene_for_entrance(match.group(1))[len("SCENE_"):])
 
     def update_patch_info(self):
         for i in range(len(self.patches)):
@@ -116,7 +181,7 @@ class ConfigView(BaseView):
                     _, self.debug_enabled = imgui.checkbox("Debug Enabled", self.debug_enabled)
                 imgui.end_tab_item()
 
-            if imgui.begin_tab_item("Gameplay").selected:
+            if imgui.begin_tab_item("Memory").selected:
                 _, heap_size_text = imgui.input_text("Play State Heap Size", hex(self.play_state_heap_size)[2:].upper(),
                                                      64,
                                                      imgui.INPUT_TEXT_CHARS_HEXADECIMAL | imgui.INPUT_TEXT_CHARS_UPPERCASE)
@@ -129,9 +194,20 @@ class ConfigView(BaseView):
                     add_tooltip(
                         "The amount of space allocated for objects in kilobytes. Default is 1000 kb,\ndepending "
                         "on the scene up to 1150 kb (SCENE_GANON_BOSS).")
-                imgui.separator()
-                _, self.map_select_default_scene = imgui.combo("Default Scene for Map Select",
-                                                               self.map_select_default_scene, self.scenes)
+                imgui.end_tab_item()
+
+            if imgui.begin_tab_item("Boot").selected:
+                _, self.boot_mode = imgui.combo("Boot Mode", self.boot_mode, self.boot_modes)
+                if self.boot_mode == 2:
+                    _, self.boot_scene = imgui.combo("Scene", self.boot_scene, self.scenes)
+                    _, self.boot_age = imgui.combo("Age", self.boot_age, self.boot_ages)
+                else:
+                    _, self.map_select_default_scene = imgui.combo("Map Select Default Scene",
+                                                                   self.map_select_default_scene,
+                                                                   self.scenes)
+                    _, self.map_select_default_age = imgui.combo("Map Select Default Age",
+                                                                 self.map_select_default_age,
+                                                                 self.boot_ages)
                 imgui.end_tab_item()
 
             if imgui.begin_tab_item("Patches").selected:
@@ -157,7 +233,7 @@ class ConfigView(BaseView):
 
     def save_config(self):
         self.save_makefile()
-        self.save_file_select()
+        self.save_boot_options()
         self.save_gameplay_options()
         self.apply_patches()
 
@@ -174,14 +250,15 @@ class ConfigView(BaseView):
         makefile_content = replace_line(makefile_content, "REGION ", "REGION ?= " + self.regions[
             self.region] if self.override_region else "# REGION ?= ")
 
+        debug_override_missing = makefile_content.find("DEBUG ?= ") == -1
         if self.override_debug:
             debug_value = "1" if self.debug_enabled else "0"
-            if makefile_content.find("DEBUG ?= ") == -1:
+            if debug_override_missing:
                 makefile_content = insert_block_before_line(makefile_content, "CFLAGS ?=", "DEBUG ?= " + debug_value)
                 makefile_content = makefile_content.replace("DEBUG := ", "DEBUG ?= ")
             else:
                 makefile_content = replace_line(makefile_content, "DEBUG ?=", "DEBUG ?= " + debug_value)
-        else:
+        elif not debug_override_missing:
             makefile_content = remove_block_from_line_to_line(makefile_content, "DEBUG ?=", "CFLAGS ?=")
             makefile_content = makefile_content.replace("DEBUG ?= ", "DEBUG := ")
 
@@ -197,7 +274,7 @@ class ConfigView(BaseView):
         with open(self.config.makefile_path, "w", encoding="utf-8") as f:
             f.write(makefile_content)
 
-    def save_file_select(self):
+    def save_boot_options(self):
         with open(self.config.z_select_path, "r", encoding="utf-8") as f:
             content = f.read()
         init_start = content.find("void MapSelect_Init")
@@ -207,7 +284,27 @@ class ConfigView(BaseView):
         content = replace_line(content, "    this->currentScene = ",
                                "    this->currentScene = " + str(self.map_select_default_scene) + ";",
                                search_from=init_start)
+        content = replace_line(content, "    gSaveContext.save.linkAge = ",
+                               "    gSaveContext.save.linkAge = " + (
+                                   "LINK_AGE_CHILD" if self.map_select_default_age == 0 else "LINK_AGE_ADULT") + ";",
+                               search_from=init_start)
         with open(self.config.z_select_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        with open(self.config.z_opening_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        setup_start = content.find("void TitleSetup_SetupTitleScreen")
+        setup_end = content.find("}", setup_start)
+        if self.boot_mode == 0:
+            content = content[:setup_start] + self.Z_OPENING_SETUP_ORIGINAL + content[setup_end + 1:]
+        elif self.boot_mode == 1:
+            content = content[:setup_start] + self.Z_OPENING_SETUP_BOOT_MAP_SELECT + content[setup_end + 1:]
+        else:
+            entrance = self.config.get_entrances_for_scene("SCENE_" + self.scenes[self.boot_scene])[0]["entrance"]
+            content = content[:setup_start] + self.Z_OPENING_SETUP_BOOT_SCENE + content[setup_end + 1:]
+            content = content.replace("__BOOT_AGE__", "LINK_AGE_CHILD" if self.boot_age == 0 else "LINK_AGE_ADULT")
+            content = content.replace("__ENTRANCE_INDEX__", entrance)
+        with open(self.config.z_opening_path, "w", encoding="utf-8") as f:
             f.write(content)
 
     def apply_patches(self):
@@ -237,8 +334,7 @@ class ConfigView(BaseView):
             else:
                 content = replace_line(content, "    spaceSize = ",
                                        "    spaceSize = " + str(self.object_space) + " * 1024;")
-        else:
-            if not override_missing:
-                content = remove_block_from_line_to_line(content, "    spaceSize = ", "    objectCtx->numEntries = ")
+        elif not override_missing:
+            content = remove_block_from_line_to_line(content, "    spaceSize = ", "    objectCtx->numEntries = ")
         with open(self.config.z_scene_path, "w", encoding="utf-8") as f:
             f.write(content)

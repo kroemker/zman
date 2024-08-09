@@ -1,4 +1,6 @@
-﻿from util.CEnumValue import CEnumValue
+﻿import re
+
+from util.CEnumValue import CEnumValue
 
 
 class Config:
@@ -9,6 +11,7 @@ class Config:
         self.makefile_path = oot_decomp_path + "/Makefile"
         self.actor_table_path = oot_decomp_path + "/include/tables/actor_table.h"
         self.scene_table_path = oot_decomp_path + "/include/tables/scene_table.h"
+        self.entrance_table_path = oot_decomp_path + "/include/tables/entrance_table.h"
         self.object_table_path = oot_decomp_path + "/include/tables/object_table.h"
         self.objects_base_path = oot_decomp_path + f"/extracted/gc-eu-mq-dbg/assets/objects"
         self.z_select_path = oot_decomp_path + "/src/overlays/gamestates/ovl_select/z_select.c"
@@ -16,6 +19,8 @@ class Config:
         self.z_parameter_path = oot_decomp_path + "/src/code/z_parameter.c"
         self.z_play_path = oot_decomp_path + "/src/code/z_play.c"
         self.z_scene_path = oot_decomp_path + "/src/code/z_scene.c"
+        self.z_title_path = oot_decomp_path + "/src/overlays/gamestates/ovl_title/z_title.c"
+        self.z_opening_path = oot_decomp_path + "/src/overlays/gamestates/ovl_opening/z_opening.c"
         self.actor_categories = [
             CEnumValue("ACTORCAT_PLAYER", "Player", "Only player."),
             CEnumValue("ACTORCAT_EXPLOSIVE", "Explosives", "Bombchus, Bombs, etc."),
@@ -82,3 +87,31 @@ class Config:
             if val.constant == constant:
                 return val
         return None
+
+    def parse_entrance_table(self):
+        with open(self.entrance_table_path, "r") as f:
+            content = f.read()
+        entrances = []
+        for line in content.split("\n"):
+            for match in re.finditer(r"/\* \w+ \*/ DEFINE_ENTRANCE\((\w+), (\w+), (\d+), (\w+), (\w+), (\w+), (\w+)\)",
+                                     line):
+                entrances.append({
+                    "entrance": match.group(1),
+                    "scene": match.group(2),
+                    "spawn_number": int(match.group(3)),
+                    "continue_bgm": match.group(4) == "true",
+                    "display_title_card": match.group(5) == "true",
+                    "enter_transition": match.group(6),
+                    "exit_transition": match.group(7),
+                })
+        return entrances
+
+    def get_entrances_for_scene(self, scene):
+        entrances = self.parse_entrance_table()
+        return [entrance for entrance in entrances if entrance["scene"] == scene]
+
+    def get_scene_for_entrance(self, entrance_name):
+        entrances = self.parse_entrance_table()
+        for entrance in entrances:
+            if entrance["entrance"] == entrance_name:
+                return entrance["scene"]
