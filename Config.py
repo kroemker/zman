@@ -9,6 +9,7 @@ class Config:
         self.mm_decomp_path = ""
         self.spec_path = oot_decomp_path + "/spec"
         self.makefile_path = oot_decomp_path + "/Makefile"
+        self.sys_cfb_path = oot_decomp_path + "/src/code/sys_cfb.c"
         self.actor_table_path = oot_decomp_path + "/include/tables/actor_table.h"
         self.scene_table_path = oot_decomp_path + "/include/tables/scene_table.h"
         self.entrance_table_path = oot_decomp_path + "/include/tables/entrance_table.h"
@@ -87,6 +88,47 @@ class Config:
             if val.constant == constant:
                 return val
         return None
+
+    def parse_object_table(self):
+        object_names = []
+        object_variables = []
+        with open(self.object_table_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        for line in content.split("\n"):
+            match = re.search(r"\/\* \w* \*\/ DEFINE_OBJECT\((\w*),\s*(\w*)\)", line)
+            if match:
+                object_names.append(match.group(1))
+                object_variables.append(match.group(2))
+        return object_names, object_variables
+
+    def parse_object_file(self, object_name):
+        animation_headers = []
+        skeleton_headers = []
+        with open(self.objects_base_path + f"/{object_name}/{object_name}.h", "r", encoding="utf-8") as f:
+            content = f.read()
+        for match in re.finditer(r"extern AnimationHeader (\w*);", content):
+            animation_headers.append(match.group(1))
+        for match in re.finditer(r"extern (Flex)*SkeletonHeader (\w*);", content):
+            skeleton_headers.append({"name": match.group(2), "flex": match.group(1) == "Flex", "limb_count": 0})
+
+        with open(self.objects_base_path + f"/{object_name}/{object_name}.c", "r", encoding="utf-8") as f:
+            content = f.read()
+        for skel in skeleton_headers:
+            if skel["flex"]:
+                match = re.search(
+                    r"FlexSkeletonHeader\s+" + re.escape(skel["name"]) + r"\s*=\s*{\s*{\s*(\w+)",
+                    content, re.MULTILINE)
+            else:
+                match = re.search(r"SkeletonHeader\s+" + re.escape(skel["name"]) + r"\s*=\s*{\s*(\w+)",
+                                  content, re.MULTILINE)
+            if match:
+                start = content.find(f"{match.group(1)}[]")
+                end = content.find("};", start)
+                skel["limb_count"] = content[start:end].count("&") + 1
+            else:
+                raise Exception(f"No skeleton found for {object_name} {skel['name']}")
+
+        return animation_headers, skeleton_headers
 
     def parse_entrance_table(self):
         with open(self.entrance_table_path, "r") as f:

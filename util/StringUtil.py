@@ -34,3 +34,14 @@ def remove_in_line(content, line_start, string_to_remove):
     if string_start == -1:
         raise Exception("Unable to find '" + string_to_remove.strip() + "'!")
     return content[:string_start] + content[string_start + len(string_to_remove):]
+
+
+def get_file_name_from_path(path):
+    return path[max(path.rfind("\\"), path.rfind("/")) + 1:]
+
+
+def concat_and_replace_duplicate_substring(first, second):
+    for i in range(len(first), 0, -1):
+        if second.startswith(first[-i:]):
+            return first + second[i:]
+    return first + second

@@ -10,8 +10,9 @@ import imgui
 import pygame
 from imgui.integrations.pygame import PygameRenderer
 
-from config import Config
+from Config import Config
 from tools.CreateActorTool import CreateActorTool
+from tools.TranslationUpdaterTool import TranslationUpdaterTool
 from view.ActorView import ActorView
 from view.ConfigView import ConfigView
 from view.InventoryView import InventoryView
@@ -39,6 +40,9 @@ class MainWindow:
         self.tools = [{
             "name": "Create Actor",
             "create": lambda: CreateActorTool(self.config, lambda window: self.windows.remove(window))
+        }, {
+            "name": "Translation Updater",
+            "create": lambda: TranslationUpdaterTool(self.config, lambda window: self.windows.remove(window))
         }]
         self.windows = []
         self.windows.extend(self.views)

@@ -74,6 +74,7 @@ class ConfigView(BaseView):
             TranslateMapSelectEntriesPatch(self.config)
         ]
         self.patch_info = [{"enabled": False, "applied": False} for _ in self.patches]
+        self.expand_memory = False
         self.play_state_heap_size = 0
         self.override_object_space = False
         self.object_space = 1000
@@ -157,6 +158,10 @@ class ConfigView(BaseView):
             self.object_space = int(match.group(1))
             self.override_object_space = True
 
+        with open(self.config.sys_cfb_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        self.expand_memory = content.find("tmpFbEnd = 0x80600000 - 0x400;") != -1
+
     def render_internal(self):
         if imgui.begin_tab_bar("ConfigTabBar"):
             if imgui.begin_tab_item("Paths").selected:
@@ -182,10 +187,14 @@ class ConfigView(BaseView):
                 imgui.end_tab_item()
 
             if imgui.begin_tab_item("Memory").selected:
+                _, self.expand_memory = imgui.checkbox("Expand Memory", self.expand_memory)
+                add_tooltip("Expands memory to use at much as possible of the 8MB RAM available.")
                 _, heap_size_text = imgui.input_text("Play State Heap Size", hex(self.play_state_heap_size)[2:].upper(),
                                                      64,
                                                      imgui.INPUT_TEXT_CHARS_HEXADECIMAL | imgui.INPUT_TEXT_CHARS_UPPERCASE)
-                add_tooltip("The size of the heap allocated for the play state. Default is 0x1D4790.")
+                add_tooltip(
+                    "The size of the heap allocated for the play state. Default is 0x1D4790.\nFor high values memory "
+                    "should be expanded.")
                 if heap_size_text != "" and heap_size_text != "0x":
                     self.play_state_heap_size = int(heap_size_text, 16)
                 _, self.override_object_space = imgui.checkbox("Override Object Space", self.override_object_space)
@@ -337,4 +346,13 @@ class ConfigView(BaseView):
         elif not override_missing:
             content = remove_block_from_line_to_line(content, "    spaceSize = ", "    objectCtx->numEntries = ")
         with open(self.config.z_scene_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        with open(self.config.sys_cfb_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        if self.expand_memory:
+            content = content.replace("tmpFbEnd = 0x8044BE80;", "tmpFbEnd = 0x80600000 - 0x400;")
+        else:
+            content = content.replace("tmpFbEnd = 0x80600000 - 0x400;", "tmpFbEnd = 0x8044BE80;")
+        with open(self.config.sys_cfb_path, "w", encoding="utf-8") as f:
             f.write(content)

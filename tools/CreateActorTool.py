@@ -1,5 +1,4 @@
 ﻿import os
-import re
 
 import imgui
 
@@ -31,20 +30,17 @@ class CreateActorTool(BaseWindow):
         self.allocation_type = 0
         self.prefer_overriding_unset_actors = True
         self.category = 0
-        self.object_names, self.object_variables = self.parse_object_table()
+        self.object_names, self.object_variables = self.config.parse_object_table()
         self.object_variable = 0
         self.actor_flags = {}
         self.actor_draw_enabled = True
         self.has_skeleton = False
         self.skeleton = 0
         self.possible_skeletons = []
-        self.flex_skeletons = []
-        self.update_possible_skeletons()
         self.initial_animation = 0
-        self.limb_count = 0
         self.action_funcs = []
         self.possible_animations = []
-        self.update_possible_animations()
+        self.update_object_file_data()
 
     def render_internal(self):
         _, self.actor_name = imgui.input_text("Actor Name", self.actor_name, 256)
@@ -71,8 +67,7 @@ class CreateActorTool(BaseWindow):
         add_tooltip(self.build_tooltip_from_cenum_list("Actor category", self.config.actor_categories))
         changed_object, self.object_variable = imgui.combo("Object", self.object_variable, self.object_variables)
         if changed_object:
-            self.update_possible_animations()
-            self.update_possible_skeletons()
+            self.update_object_file_data()
         add_tooltip(
             "The object contains the actor's additional resources such as model, textures etc..\nIt is loaded when "
             "the actor is spawned unless it is already loaded.\nThis is always the case for OBJECT_GAMEPLAY_KEEP.\n"
@@ -84,12 +79,11 @@ class CreateActorTool(BaseWindow):
         _, self.has_skeleton = imgui.checkbox("Has Skeleton", self.has_skeleton)
         add_tooltip("If enabled, the actor will have a skeleton and can be animated.")
         if self.has_skeleton:
-            _, self.skeleton = imgui.combo("Skeleton", self.skeleton, self.possible_skeletons)
+            _, self.skeleton = imgui.combo("Skeleton", self.skeleton,
+                                           [skel["name"] for skel in self.possible_skeletons])
             _, self.initial_animation = imgui.combo("Initial Animation", self.initial_animation,
                                                     self.possible_animations)
             add_tooltip("The initial animation to play when the actor is spawned.")
-            _, self.limb_count = imgui.input_int("Limb Count", self.limb_count)
-            add_tooltip("The number of limbs in the actor's skeleton.")
 
         imgui.separator()
         imgui.text("Action Functions")
@@ -98,6 +92,8 @@ class CreateActorTool(BaseWindow):
         if imgui.button("Create") and self.is_valid():
             self.create_actor()
             self.destroy()
+        if not self.is_valid():
+            imgui.text_colored("Please fill out all required fields.", 1, 0, 0)
 
     def render_actor_flag_checkboxes(self):
         if imgui.tree_node("Actor Flags", imgui.TREE_NODE_FRAMED):
@@ -140,36 +136,9 @@ class CreateActorTool(BaseWindow):
     def is_valid(self):
         return self.actor_name != ""
 
-    def parse_object_table(self):  # TODO probably move this to a separate class
-        object_names = []
-        object_variables = []
-        with open(self.config.object_table_path, "r", encoding="utf-8") as f:
-            content = f.read()
-        for line in content.split("\n"):
-            match = re.search(r"\/\* \w* \*\/ DEFINE_OBJECT\((\w*),\s*(\w*)\)", line)
-            if match:
-                object_names.append(match.group(1))
-                object_variables.append(match.group(2))
-        return object_names, object_variables
-
-    def update_possible_animations(self):
-        self.possible_animations = []
+    def update_object_file_data(self):
         object_name = self.object_names[self.object_variable]
-        with open(self.config.objects_base_path + f"/{object_name}/{object_name}.h", "r", encoding="utf-8") as f:
-            content = f.read()
-        for match in re.finditer(r"extern AnimationHeader (\w*);", content):
-            self.possible_animations.append(match.group(1))
-
-    def update_possible_skeletons(self):
-        self.possible_skeletons = []
-        self.flex_skeletons = []
-        object_name = self.object_names[self.object_variable]
-        with open(self.config.objects_base_path + f"/{object_name}/{object_name}.h", "r", encoding="utf-8") as f:
-            content = f.read()
-        for match in re.finditer(r"extern (Flex)*SkeletonHeader (\w*);", content):
-            self.possible_skeletons.append(match.group(2))
-            if match.group(1) == "Flex":
-                self.flex_skeletons.append(match.group(2))
+        self.possible_animations, self.possible_skeletons = self.config.parse_object_file(object_name)
 
     def create_actor(self):
         self.create_spec_entry()
@@ -228,9 +197,10 @@ class CreateActorTool(BaseWindow):
                  f"typedef struct {self.actor_name_no_underscores()} {{\n" \
                  f"    Actor actor;\n"
         if self.has_skeleton:
+            skeleton = self.possible_skeletons[self.skeleton]
             h_file += f"    SkelAnime skelAnime;\n" \
-                      f"    Vec3s jointTable[{self.limb_count}];\n" \
-                      f"    Vec3s morphTable[{self.limb_count}];\n"
+                      f"    Vec3s jointTable[{skeleton["limb_count"]}];\n" \
+                      f"    Vec3s morphTable[{skeleton["limb_count"]}];\n"
         h_file += f"    {self.actor_name_no_underscores()}ActionFunc actionFunc;\n"
         h_file += f"}} {self.actor_name_no_underscores()};\n\n" \
                   f"#endif\n"
@@ -281,7 +251,7 @@ class CreateActorTool(BaseWindow):
                 else:
                     c_file += "    "
                 c_file += f"if (this->actionFunc == {self.actor_name_no_underscores()}_Action_{action_func['name']}) {{\n" \
-                          f"        Animation_Change(&this->skelAnime, &{self.possible_animations[action_func["animation"]]}, {action_func["animation_speed"]}, 0.0f, Animation_GetLastFrame(&{self.possible_animations[action_func["animation"]]}), {"ANIMMODE_LOOP" if action_func["animation_looped"] else "ANIMMODE_ONCE_INTERP"}, 4.0f);\n" \
+                          f"        Animation_Change(&this->skelAnime, &{self.possible_animations[action_func["animation"]]}, {action_func["animation_speed"]}f, 0.0f, Animation_GetLastFrame(&{self.possible_animations[action_func["animation"]]}), {"ANIMMODE_LOOP" if action_func["animation_looped"] else "ANIMMODE_ONCE_INTERP"}, 4.0f);\n" \
                           f"    }}\n"
                 i += 1
         c_file += f"}}\n\n"
@@ -293,10 +263,11 @@ class CreateActorTool(BaseWindow):
         c_file += f"void {self.actor_name_no_underscores()}_Init(Actor* thisx, PlayState* play) {{\n" \
                   f"    {self.actor_name_no_underscores()}* this = ({self.actor_name_no_underscores()}*)thisx;\n"
         if self.has_skeleton:
+            skeleton = self.possible_skeletons[self.skeleton]
             c_file += "    SkelAnime_Init"
-            if self.possible_skeletons[self.skeleton] in self.flex_skeletons:
+            if skeleton["flex"]:
                 c_file += "Flex"
-            c_file += f"(play, &this->skelAnime, &{self.possible_skeletons[self.skeleton]}, &{self.possible_animations[self.initial_animation]}, this->jointTable, this->morphTable, {self.limb_count});\n"
+            c_file += f"(play, &this->skelAnime, &{skeleton["name"]}, &{self.possible_animations[self.initial_animation]}, this->jointTable, this->morphTable, {skeleton["limb_count"]});\n"
         c_file += f"}}\n\n" \
                   f"void {self.actor_name_no_underscores()}_Destroy(Actor* thisx, PlayState* play) {{\n" \
                   f"    {self.actor_name_no_underscores()}* this = ({self.actor_name_no_underscores()}*)thisx;\n" \
