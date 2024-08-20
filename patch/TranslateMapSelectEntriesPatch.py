@@ -1,7 +1,7 @@
-﻿from patch.Patch import Patch
+﻿from patch.FindReplacePatch import FindReplacePatch
 
 
-class TranslateMapSelectEntriesPatch(Patch):
+class TranslateMapSelectEntriesPatch(FindReplacePatch):
     ORIGINAL_ENTRIES = """static SceneSelectEntry sScenes[] = {
     { " 1:SPOT00", MapSelect_LoadGame, ENTR_HYRULE_FIELD_0 },
     { " 2:SPOT01", MapSelect_LoadGame, ENTR_KAKARIKO_VILLAGE_0 },
@@ -378,23 +378,5 @@ class TranslateMapSelectEntriesPatch(Patch):
 };"""
 
     def __init__(self, config):
-        super().__init__(config, "Translate Map Select Entries")
-
-    def apply(self):
-        with open(self.config.z_select_path, "r", encoding="utf-8") as f:
-            content = f.read()
-        content = content.replace(self.ORIGINAL_ENTRIES, self.TRANSLATED_ENTRIES)
-        with open(self.config.z_select_path, "w", encoding="utf-8") as f:
-            f.write(content)
-
-    def is_patch_applied(self):
-        with open(self.config.z_select_path, "r", encoding="utf-8") as f:
-            content = f.read()
-        return self.TRANSLATED_ENTRIES in content
-
-    def revert(self):
-        with open(self.config.z_select_path, "r", encoding="utf-8") as f:
-            content = f.read()
-        content = content.replace(self.TRANSLATED_ENTRIES, self.ORIGINAL_ENTRIES)
-        with open(self.config.z_select_path, "w", encoding="utf-8") as f:
-            f.write(content)
+        super().__init__(config, "Translate Map Select Entries", config.z_select_path, self.ORIGINAL_ENTRIES,
+                         self.TRANSLATED_ENTRIES)

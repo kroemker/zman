@@ -5,6 +5,7 @@ import imgui
 from patch.AdultCrawlspaceEntryPatch import AdultCrawlspaceEntryPatch
 from patch.DrawDPadIconPatch import DrawDPadIconPatch
 from patch.RestoreN64LogoPatch import RestoreN64LogoPatch
+from patch.SkipDmaTablePrintPatch import SkipDmaTablePrintPatch
 from patch.TranslateMapSelectEntriesPatch import TranslateMapSelectEntriesPatch
 from util.ImguiUtil import add_tooltip
 from util.StringUtil import replace_line, insert_block_before_line, remove_block_from_line_to_line
@@ -71,7 +72,8 @@ class ConfigView(BaseView):
             AdultCrawlspaceEntryPatch(self.config),
             DrawDPadIconPatch(self.config),
             RestoreN64LogoPatch(self.config),
-            TranslateMapSelectEntriesPatch(self.config)
+            TranslateMapSelectEntriesPatch(self.config),
+            SkipDmaTablePrintPatch(self.config)
         ]
         self.patch_info = [{"enabled": False, "applied": False} for _ in self.patches]
         self.expand_memory = False

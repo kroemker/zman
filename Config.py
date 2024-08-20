@@ -22,6 +22,7 @@ class Config:
         self.z_scene_path = oot_decomp_path + "/src/code/z_scene.c"
         self.z_title_path = oot_decomp_path + "/src/overlays/gamestates/ovl_title/z_title.c"
         self.z_opening_path = oot_decomp_path + "/src/overlays/gamestates/ovl_opening/z_opening.c"
+        self.z_std_dma_path = oot_decomp_path + "/src/boot/z_std_dma.c"
         self.actor_categories = [
             CEnumValue("ACTORCAT_PLAYER", "Player", "Only player."),
             CEnumValue("ACTORCAT_EXPLOSIVE", "Explosives", "Bombchus, Bombs, etc."),
