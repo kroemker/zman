@@ -67,6 +67,7 @@ class ConfigView(BaseView):
         self.boot_ages = ["Child", "Adult"]
         self.map_select_default_scene = 0
         self.map_select_default_age = 0
+        self.map_select_entries = []
         self.scenes = []
         self.patches = [
             AdultCrawlspaceEntryPatch(self.config),
@@ -84,6 +85,7 @@ class ConfigView(BaseView):
     def update(self):
         self.update_makefile_options()
         self.update_scenes()
+        self.update_map_select_entries()
         self.update_boot_options()
         self.update_patch_info()
         self.update_gameplay_options()
@@ -108,6 +110,13 @@ class ConfigView(BaseView):
             if line.startswith("\tcp $(ROM) "):
                 self.copy_rom = True
                 self.rom_copy_dir = line.split(" ")[2]
+
+    def update_map_select_entries(self):
+        self.map_select_entries = []
+        with open(self.config.z_select_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        for match in re.finditer(r"\{ *\"(.*)\", MapSelect_LoadGame,.*}", content):
+            self.map_select_entries.append(match.group(1))
 
     def update_boot_options(self):
         with open(self.config.z_select_path, "r", encoding="utf-8") as f:
@@ -215,7 +224,7 @@ class ConfigView(BaseView):
                 else:
                     _, self.map_select_default_scene = imgui.combo("Map Select Default Scene",
                                                                    self.map_select_default_scene,
-                                                                   self.scenes)
+                                                                   self.map_select_entries)
                     _, self.map_select_default_age = imgui.combo("Map Select Default Age",
                                                                  self.map_select_default_age,
                                                                  self.boot_ages)
@@ -290,10 +299,10 @@ class ConfigView(BaseView):
             content = f.read()
         init_start = content.find("void MapSelect_Init")
         content = replace_line(content, "    this->topDisplayedScene = ",
-                               "    this->topDisplayedScene = " + str(self.map_select_default_scene) + ";",
+                               "    this->topDisplayedScene = dREG(81) = " + str(self.map_select_default_scene) + ";",
                                search_from=init_start)
         content = replace_line(content, "    this->currentScene = ",
-                               "    this->currentScene = " + str(self.map_select_default_scene) + ";",
+                               "    this->currentScene = dREG(80) = " + str(self.map_select_default_scene) + ";",
                                search_from=init_start)
         content = replace_line(content, "    gSaveContext.save.linkAge = ",
                                "    gSaveContext.save.linkAge = " + (
