@@ -45,3 +45,39 @@ def concat_and_replace_duplicate_substring(first, second):
         if second.startswith(first[-i:]):
             return first + second[i:]
     return first + second
+
+
+def get_flags(flags_string):
+    flags = list(map(lambda x: x.strip(), flags_string.strip("()").split("|")))
+    if len(flags) == 1 and flags[0] == "0":
+        return []
+    return flags
+
+
+def get_struct_content(struct_content_string):
+    struct = []
+    field_start = 0
+    i = 0
+    while i < len(struct_content_string):
+        char = struct_content_string[i]
+        if char == ",":
+            field = struct_content_string[field_start:i].strip()
+            if field != "":
+                struct.append(field)
+            field_start = i + 1
+        elif char == "{":
+            inner_struct, index = get_struct_content(struct_content_string[i + 1:])
+            struct.append(inner_struct)
+            i += index + 1
+            field_start = i + 1
+        elif char == "}":
+            field = struct_content_string[field_start:i].strip()
+            if field != "":
+                struct.append(field)
+            return struct, i
+        i += 1
+    return struct, i
+
+
+def parse_c_float(string) -> float:
+    return float(string.strip("f"))

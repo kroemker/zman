@@ -83,12 +83,136 @@ class Config:
             CEnumValue("ACTOR_FLAG_28", "SFX Timer",
                        "Actor sfx field is used as timer state instead of an sfx id")
         ]
+        self.collider_types = [
+            CEnumValue("COLTYPE_HIT0", "Hit 0", "Blue blood, white hitmark"),
+            CEnumValue("COLTYPE_HIT1", "Hit 1", "No blood, dust hitmark"),
+            CEnumValue("COLTYPE_HIT2", "Hit 2", "Green blood, dust hitmark"),
+            CEnumValue("COLTYPE_HIT3", "Hit 3", "No blood, white hitmark"),
+            CEnumValue("COLTYPE_HIT4", "Hit 4", "Water burst, no hitmark"),
+            CEnumValue("COLTYPE_HIT5", "Hit 5", "No blood, red hitmark"),
+            CEnumValue("COLTYPE_HIT6", "Hit 6", "Green blood, white hitmark"),
+            CEnumValue("COLTYPE_HIT7", "Hit 7", "Red blood, white hitmark"),
+            CEnumValue("COLTYPE_HIT8", "Hit 8", "Blue blood, red hitmark"),
+            CEnumValue("COLTYPE_METAL", "Metal", "Metal"),
+            CEnumValue("COLTYPE_NONE", "None", "None"),
+            CEnumValue("COLTYPE_WOOD", "Wood", "Wood"),
+            CEnumValue("COLTYPE_HARD", "Hard", "Hard"),
+            CEnumValue("COLTYPE_TREE", "Tree", "Tree"),
+        ]
+        self.at_flags = [
+            CEnumValue("AT_TYPE_PLAYER", "Player", "Has player-aligned damage"),
+            CEnumValue("AT_TYPE_ENEMY", "Enemy", "Has enemy-aligned damage"),
+            CEnumValue("AT_TYPE_OTHER", "Other", "Has non-aligned damage"),
+            CEnumValue("AT_SELF", "Self", "Can have AT collisions with colliders attached to the same actor"),
+        ]
+        self.ac_flags = [
+            CEnumValue("AC_TYPE_PLAYER", "Player", "Takes player-aligned damage"),
+            CEnumValue("AC_TYPE_ENEMY", "Enemy", "Takes enemy-aligned damage"),
+            CEnumValue("AC_TYPE_OTHER", "Other", "Takes non-aligned damage"),
+            CEnumValue("AC_NO_DAMAGE", "No Damage", "Collider does not take damage"),
+        ]
+        self.oc1_flags = [
+            CEnumValue("OC1_NO_PUSH", "No Push", "Does not push other colliders away during OC collisions"),
+            CEnumValue("OC1_TYPE_PLAYER", "Player", "Can have OC collisions with OC type player"),
+            CEnumValue("OC1_TYPE_1", "Type 1", "Can have OC collisions with OC type 1"),
+            CEnumValue("OC1_TYPE_2", "Type 2", "Can have OC collisions with OC type 2"),
+        ]
+        self.oc2_flags = [
+            CEnumValue("OC2_UNK1", "Unknown 1",
+                       "Prevents OC collisions with OC2_UNK2. Some horses and toki_sword have it."),
+            CEnumValue("OC2_UNK2", "Unknown 2", "Prevents OC collisions with OC2_UNK1. Nothing has it."),
+            CEnumValue("OC2_TYPE_PLAYER", "Player", "Has OC type player"),
+            CEnumValue("OC2_TYPE_1", "Type 1", "Has OC type 1"),
+            CEnumValue("OC2_TYPE_2", "Type 2", "Has OC type 2"),
+        ]
+        self.collider_shapes = [
+            CEnumValue("COLSHAPE_JNTSPH", "Joint Sphere", "Jointed sphere"),
+            CEnumValue("COLSHAPE_CYLINDER", "Cylinder", "Cylinder"),
+            CEnumValue("COLSHAPE_TRIS", "Tris", "Triangles"),
+            CEnumValue("COLSHAPE_QUAD", "Quad", "Quad"),
+        ]
+        self.at_elem_flags = [
+            CEnumValue("ATELEM_NEAREST", "Nearest",
+                       "For COLSHAPE_QUAD colliders, only collide with the closest AC element"),
+            CEnumValue("ATELEM_SFX_NORMAL", "Normal SFX", "Hit sound effect based on AC collider's type"),
+            CEnumValue("ATELEM_SFX_HARD", "Hard SFX", "Always uses hard deflection sound"),
+            CEnumValue("ATELEM_SFX_WOOD", "Wood SFX", "Always uses wood deflection sound"),
+            CEnumValue("ATELEM_SFX_NONE", "No SFX", "No hit sound effect"),
+            CEnumValue("ATELEM_AT_HITMARK", "Hitmark", "Draw hitmarks for every AT collision"),
+            CEnumValue("ATELEM_UNK7", "Unknown", " Unknown purpose. Used by some enemy quads"),
+        ]
+        self.ac_elem_flags = [
+            CEnumValue("ACELEM_HOOKABLE", "Hookable", "Can be hooked if actor has hookability flags set."),
+            CEnumValue("ACELEM_NO_AT_INFO", "No AT Info", "Does not give its info to the AT collider that hit it."),
+            CEnumValue("ACELEM_NO_DAMAGE", "No Damage", "Does not take damage."),
+            CEnumValue("ACELEM_NO_SWORD_SFX", "No Sword SFX",
+                       "Does not have a sound effect when hit by player-attached AT colliders."),
+            CEnumValue("ACELEM_NO_HITMARK", "No Hitmark", "Skips hit effects."),
+        ]
+        self.oc_elem_flags = [
+            CEnumValue("OCELEM_UNK3", "Unknown 3",
+                       "Unknown purpose. Used by Dead Hand element 0 and Dodongo element 5"),
+        ]
+        self.damage_types = [
+            CEnumValue("DMG_DEKU_NUT", "Deku Nut", "Deku Nut"),
+            CEnumValue("DMG_DEKU_STICK", "Deku Stick", "Deku Stick"),
+            CEnumValue("DMG_SLINGSHOT", "Slingshot", "Slingshot"),
+            CEnumValue("DMG_EXPLOSIVE", "Explosive", "Explosive"),
+            CEnumValue("DMG_BOOMERANG", "Boomerang", "Boomerang"),
+            CEnumValue("DMG_ARROW_NORMAL", "Arrow Normal", "Arrow Normal"),
+            CEnumValue("DMG_HAMMER_SWING", "Hammer Swing", "Hammer Swing"),
+            CEnumValue("DMG_HOOKSHOT", "Hookshot", "Hookshot"),
+            CEnumValue("DMG_SLASH_KOKIRI", "Slash Kokiri", "Slash Kokiri"),
+            CEnumValue("DMG_SLASH_MASTER", "Slash Master", "Slash Master"),
+            CEnumValue("DMG_SLASH_GIANT", "Slash Giant", "Slash Giant"),
+            CEnumValue("DMG_ARROW_FIRE", "Arrow Fire", "Arrow Fire"),
+            CEnumValue("DMG_ARROW_ICE", "Arrow Ice", "Arrow Ice"),
+            CEnumValue("DMG_ARROW_LIGHT", "Arrow Light", "Arrow Light"),
+            CEnumValue("DMG_ARROW_UNK1", "Arrow Unk1", "Arrow Unk1"),
+            CEnumValue("DMG_ARROW_UNK2", "Arrow Unk2", "Arrow Unk2"),
+            CEnumValue("DMG_ARROW_UNK3", "Arrow Unk3", "Arrow Unk3"),
+            CEnumValue("DMG_MAGIC_FIRE", "Magic Fire", "Magic Fire"),
+            CEnumValue("DMG_MAGIC_ICE", "Magic Ice", "Magic Ice"),
+            CEnumValue("DMG_MAGIC_LIGHT", "Magic Light", "Magic Light"),
+            CEnumValue("DMG_SHIELD", "Shield", "Shield"),
+            CEnumValue("DMG_MIR_RAY", "Mirror Ray", "Mirror Ray"),
+            CEnumValue("DMG_SPIN_KOKIRI", "Spin Kokiri", "Spin Kokiri"),
+            CEnumValue("DMG_SPIN_GIANT", "Spin Giant", "Spin Giant"),
+            CEnumValue("DMG_SPIN_MASTER", "Spin Master", "Spin Master"),
+            CEnumValue("DMG_JUMP_KOKIRI", "Jump Kokiri", "Jump Kokiri"),
+            CEnumValue("DMG_JUMP_GIANT", "Jump Giant", "Jump Giant"),
+            CEnumValue("DMG_JUMP_MASTER", "Jump Master", "Jump Master"),
+            CEnumValue("DMG_UNKNOWN_1", "Unknown 1", "Unknown 1"),
+            CEnumValue("DMG_UNBLOCKABLE", "Unblockable", "Unblockable"),
+            CEnumValue("DMG_HAMMER_JUMP", "Hammer Jump", "Hammer Jump"),
+            CEnumValue("DMG_UNKNOWN_2", "Unknown 2", "Unknown 2"),
+        ]
+        self.damage_effects = [
+            CEnumValue("0", "None", "No damage effect"),
+            CEnumValue("1", "Fire", "Fire damage effect"),
+            CEnumValue("2", "Ice", "Ice damage effect"),
+            CEnumValue("3", "Electric", "Electric damage effect"),
+        ]
+
+    def get_cenum_index_by_constant(self, cenum, constant):
+        for i in range(len(cenum)):
+            if cenum[i].constant == constant:
+                return i
+        return None
 
     def get_cenum_by_constant(self, cenum, constant):
         for val in cenum:
             if val.constant == constant:
                 return val
         return None
+
+    def get_constants_from_flag_string(self, cenum, flags_string):
+        result = []
+        flags_int = int(flags_string, 0)
+        for i in range(len(cenum)):
+            if flags_int & (1 << i):
+                result.append(cenum[i].constant)
+        return result
 
     def parse_object_table(self):
         object_names = []

@@ -12,6 +12,7 @@ from imgui.integrations.pygame import PygameRenderer
 
 from Config import Config
 from tools.CreateActorTool import CreateActorTool
+from tools.TextureSplitterTool import TextureSplitterTool
 from tools.TranslationUpdaterTool import TranslationUpdaterTool
 from view.ActorView import ActorView
 from view.ConfigView import ConfigView
@@ -43,6 +44,9 @@ class MainWindow:
         }, {
             "name": "Translation Updater",
             "create": lambda: TranslationUpdaterTool(self.config, lambda window: self.windows.remove(window))
+        }, {
+            "name": "Texture Splitter",
+            "create": lambda: TextureSplitterTool(self.config, lambda window: self.windows.remove(window))
         }]
         self.windows = []
         self.windows.extend(self.views)

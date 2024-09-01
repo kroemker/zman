@@ -5,6 +5,7 @@ import imgui
 from BaseWindow import BaseWindow
 from util.CEnumValue import CEnumValue
 from util.ImguiUtil import add_tooltip
+from util.RenderUtil import render_cenum_combo
 
 
 # Possible features:
@@ -50,8 +51,7 @@ class CreateActorTool(BaseWindow):
 
         imgui.separator()
         imgui.text("Overlay Settings")
-        _, self.allocation_type = imgui.combo("Allocation Type", self.allocation_type,
-                                              [allocation_type.name for allocation_type in self.allocation_types])
+        _, self.allocation_type = render_cenum_combo("Allocation Type", self.allocation_type, self.allocation_types)
         add_tooltip(self.build_tooltip_from_cenum_list("Overlay allocation type", self.allocation_types))
         _, self.prefer_overriding_unset_actors = imgui.checkbox("Prefer Overriding Unset Actors",
                                                                 self.prefer_overriding_unset_actors)
@@ -62,8 +62,7 @@ class CreateActorTool(BaseWindow):
 
         imgui.separator()
         imgui.text("Profile")
-        _, self.category = imgui.combo("Category", self.category,
-                                       [category.name for category in self.config.actor_categories])
+        _, self.category = render_cenum_combo("Category", self.category, self.config.actor_categories)
         add_tooltip(self.build_tooltip_from_cenum_list("Actor category", self.config.actor_categories))
         changed_object, self.object_variable = imgui.combo("Object", self.object_variable, self.object_variables)
         if changed_object:

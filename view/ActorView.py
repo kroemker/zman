@@ -2,6 +2,8 @@
 
 import imgui
 
+from util.StringUtil import get_flags
+from view.ActorEditWindow import ActorEditWindow
 from view.BaseView import BaseView
 
 
@@ -14,6 +16,7 @@ class ActorView(BaseView):
         self.category_values = [category.name for category in self.config.actor_categories]
         self.category_values.append("All")
         self.category_filter = len(self.config.actor_categories)
+        self.showEditWindow = False
 
     def render_internal(self):
         self.__render_menu()
@@ -36,6 +39,8 @@ class ActorView(BaseView):
                 imgui.text("Flags: " + ", ".join(
                     [self.config.get_cenum_by_constant(self.config.actor_flags, flag).name for flag in actor["flags"]]))
                 imgui.text("Object: " + actor["object"])
+                if imgui.button("Edit"):
+                    self.add_child_window(ActorEditWindow(self.config, actor, self.remove_child_window))
                 imgui.tree_pop()
 
     def __render_menu(self):
@@ -61,11 +66,12 @@ class ActorView(BaseView):
                     c_file = root + "/" + directory + "/" + directory.lower().replace("ovl_", "z_") + ".c"
                 with open(c_file, "r", encoding="utf-8") as f:
                     content = f.read()
-                actor = self.__parse_actor(directory, content)
+                actor = self.__parse_actor(c_file, directory, content)
                 self.actors.append(actor)
 
-    def __parse_actor(self, directory, content):
+    def __parse_actor(self, c_file, directory, content):
         actor = {}
+        actor["c_file"] = c_file
         actor["name"] = directory
         actor["descriptive_name"] = self.__parse_descriptive_name(content)
         actor["variable"], actor["category"], actor["flags"], actor["object"] = self.parse_profile(directory,
@@ -105,10 +111,7 @@ class ActorView(BaseView):
         end = content.find("\n", start)
         if content == -1:
             return []
-        flags = list(map(lambda x: x.strip(), content[start:end].strip("()").split("|")))
-        if len(flags) == 1 and flags[0] == "0":
-            return []
-        return flags
+        return get_flags(content[start:end])
 
     def __get_actor_names(self, actor):
         if self.show_by_descriptive_name and actor["descriptive_name"] != "":

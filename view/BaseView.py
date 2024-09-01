@@ -10,6 +10,7 @@ class BaseView(BaseWindow):
         super().__init__(name, config)
         self.visible = visible
         self.menu = menu
+        self.child_windows = []
 
     def render(self):
         if self.visible:
@@ -18,6 +19,8 @@ class BaseView(BaseWindow):
                 self.__render_menu()
             self.render_internal()
             imgui.end()
+            for window in self.child_windows:
+                window.render()
 
     def __render_menu(self):
         if imgui.begin_menu_bar():
@@ -38,3 +41,9 @@ class BaseView(BaseWindow):
 
     def hide(self):
         self.visible = False
+
+    def add_child_window(self, window):
+        self.child_windows.append(window)
+
+    def remove_child_window(self, window):
+        self.child_windows.remove(window)
