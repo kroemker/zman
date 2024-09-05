@@ -5,6 +5,7 @@ class MessageList:
     Warning = 0
     Error = 1
     Info = 2
+    Success = 3
 
     def __init__(self):
         self.messages = []
@@ -29,5 +30,7 @@ class MessageList:
                 imgui.text_colored(message[1], 1.0, 0.0, 0.0)
             elif message[0] == self.Info:
                 imgui.text_colored(message[1], 0.0, 1.0, 1.0)
+            elif message[0] == self.Success:
+                imgui.text_colored(message[1], 0.0, 1.0, 0.0)
             else:
                 imgui.text(message[1])

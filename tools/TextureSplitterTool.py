@@ -51,3 +51,4 @@ class TextureSplitterTool(BaseWindow):
             for j in range(0, image.shape[1], self.size_x):
                 iio.imwrite(self.output_folder + "/" + self.texture_name + "_" + str(i) + "_" + str(j) + ".png",
                             image[i:i + self.size_y, j:j + self.size_x])
+        self.messages.add_message("Textures split successfully", MessageList.Success)

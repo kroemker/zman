@@ -86,26 +86,30 @@ class TranslationUpdaterTool(BaseWindow):
             content = f.read()
         # Translation above PRINT function
         for match in re.finditer(
-                r"//\s*\"(.*)\"\s*(PRINTF|osSyncPrintf)\(\"(.*)\"",
+                r"//\s*\"(.*)\"\s*(\w*PRINTF|osSyncPrintf)\((\s*.*\s*)\"(.*)\"",
                 content, re.UNICODE | re.MULTILINE):
-            replacement = match.group(1)
+            replacement = match.group(1).replace("\"", "")
             function = match.group(2)
-            text = match.group(3)
-            self.add_translatable_entry(c_file, content, function, match.start(), match.end(), replacement, text)
+            color_format = match.group(3)
+            text = match.group(4)
+            self.add_translatable_entry(c_file, content, function, color_format, match.start(), match.end(),
+                                        replacement, text)
 
         # Translation at the end of line
-        for match in re.finditer(r"(PRINTF|osSyncPrintf)\(\"(.*)\".*//\s*\"(.*)\"", content, re.UNICODE):
-            replacement = match.group(3)
+        for match in re.finditer(r"(\w*PRINTF|osSyncPrintf)\((\s*.*\s*)\"(.*)\".*//\s*\"(.*)\"", content, re.UNICODE):
             function = match.group(1)
-            text = match.group(2)
-            self.add_translatable_entry(c_file, content, function, match.start(), match.end(2) + 1, replacement, text)
+            color_format = match.group(2)
+            text = match.group(3)
+            replacement = match.group(4).replace("\"", "")
+            self.add_translatable_entry(c_file, content, function, color_format, match.start(), match.end(3) + 1,
+                                        replacement, text)
 
-    def add_translatable_entry(self, c_file, content, function, start, end, replacement, text):
+    def add_translatable_entry(self, c_file, content, function, color_format, start, end, replacement, text):
         cjk_substring_start, cjk_substring_end = self.get_cjk_substring(text)
         if cjk_substring_start >= 0:
             replaced_text = concat_and_replace_duplicate_substring(text[:cjk_substring_start], replacement)
             replaced_text = concat_and_replace_duplicate_substring(replaced_text, text[cjk_substring_end:])
-            result = function + "(\"" + replaced_text + "\""
+            result = function + "(" + color_format + "\"" + replaced_text + "\""
             entry = (c_file, start, end, content[start:end], result)
             if c_file not in self.translatable_entries:
                 self.translatable_entries[c_file] = [entry]
