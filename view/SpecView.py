@@ -3,6 +3,7 @@
 import imgui
 
 from view.BaseView import BaseView
+from view.CreateSpecEntriesWindow import CreateSpecEntriesWindow
 
 
 class SpecView(BaseView):
@@ -11,6 +12,7 @@ class SpecView(BaseView):
         self.segments = {}
         self.selected_segment = None
         self.spec_filter = ""
+        self.add_menu_action("Create spec entries", self.add_room_entries)
 
     def render_internal(self):
         _, self.spec_filter = imgui.input_text("Filter", self.spec_filter, 256)
@@ -83,3 +85,6 @@ class SpecView(BaseView):
     def __parse_groups_from_include_path(self, include_path):
         groups = include_path.replace("$(BUILD_DIR)/", "").title().split("/")
         return groups[:-2] if len(groups) > 2 else groups[:-1]
+
+    def add_room_entries(self):
+        self.add_child_window(CreateSpecEntriesWindow(self.config, self.remove_child_window))

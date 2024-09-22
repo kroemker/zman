@@ -5,6 +5,7 @@ from util.CEnumValue import CEnumValue
 
 class Config:
     def __init__(self, oot_decomp_path):
+        self.file_contents = {}
         self.oot_decomp_path = oot_decomp_path
         self.mm_decomp_path = ""
         self.spec_path = oot_decomp_path + "/spec"
@@ -15,6 +16,8 @@ class Config:
         self.entrance_table_path = oot_decomp_path + "/include/tables/entrance_table.h"
         self.object_table_path = oot_decomp_path + "/include/tables/object_table.h"
         self.objects_base_path = oot_decomp_path + f"/extracted/gc-eu-mq-dbg/assets/objects"
+        self.mod_assets_path = oot_decomp_path + "/mod_assets"
+        self.mod_assets_object_path = self.mod_assets_path + "/objects"
         self.z_select_path = oot_decomp_path + "/src/overlays/gamestates/ovl_select/z_select.c"
         self.z_player_path = oot_decomp_path + "/src/overlays/actors/ovl_player_actor/z_player.c"
         self.z_parameter_path = oot_decomp_path + "/src/code/z_parameter.c"
@@ -116,6 +119,7 @@ class Config:
             CEnumValue("OC1_TYPE_PLAYER", "Player", "Can have OC collisions with OC type player"),
             CEnumValue("OC1_TYPE_1", "Type 1", "Can have OC collisions with OC type 1"),
             CEnumValue("OC1_TYPE_2", "Type 2", "Can have OC collisions with OC type 2"),
+            CEnumValue("OC1_TYPE_ALL", "All", "Can have collisions with all three OC types"),
         ]
         self.oc2_flags = [
             CEnumValue("OC2_UNK1", "Unknown 1",
@@ -124,6 +128,8 @@ class Config:
             CEnumValue("OC2_TYPE_PLAYER", "Player", "Has OC type player"),
             CEnumValue("OC2_TYPE_1", "Type 1", "Has OC type 1"),
             CEnumValue("OC2_TYPE_2", "Type 2", "Has OC type 2"),
+            CEnumValue("OC2_FIRST_ONLY", "First Only",
+                       "Skips AC checks on elements after the first collision. Only used by Ganon."),
         ]
         self.collider_shapes = [
             CEnumValue("COLSHAPE_JNTSPH", "Joint Sphere", "Jointed sphere"),
@@ -282,3 +288,13 @@ class Config:
         for entrance in entrances:
             if entrance["entrance"] == entrance_name:
                 return entrance["scene"]
+
+    def read_file_memoized(self, filename):
+        if filename in self.file_contents:
+            return self.file_contents[filename]
+        else:
+            with open(filename, "r") as f:
+                return f.read()
+
+    def set_file_reload_required(self):
+        self.file_contents = {}

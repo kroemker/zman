@@ -81,3 +81,11 @@ def get_struct_content(struct_content_string):
 
 def parse_c_float(string) -> float:
     return float(string.strip("f"))
+
+
+def formatHex(number, digits):
+    return "0x" + format(number, "0" + str(digits) + "X")
+
+
+def tab(num):
+    return "    " * num

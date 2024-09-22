@@ -16,7 +16,6 @@ class ActorView(BaseView):
         self.category_values = [category.name for category in self.config.actor_categories]
         self.category_values.append("All")
         self.category_filter = len(self.config.actor_categories)
-        self.showEditWindow = False
 
     def render_internal(self):
         self.__render_menu()

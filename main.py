@@ -20,6 +20,12 @@ from view.InventoryView import InventoryView
 from view.SpecView import SpecView
 
 
+# TODOs:
+# -load/save decomp paths from file
+# -check if mod_assets is installed properly on startup otherwise install it
+# -install hm comp actors tool
+# -port mm actors tool
+# -scene view
 class MainWindow:
     def __init__(self):
         pygame.init()
